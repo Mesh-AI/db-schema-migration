@@ -1,0 +1,9 @@
+CREATE DATABASE TestDB;
+SELECT Name from sys.databases;
+USE TestDB;
+GO
+
+CREATE TABLE Inventory (id INT, name NVARCHAR(50), quantity INT);
+GO
+CREATE TABLE Books(Id INT PRIMARY KEY IDENTITY(1,1), Name VARCHAR (50) NOT NULL, Price INT);
+GO
