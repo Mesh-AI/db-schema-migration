@@ -21,5 +21,3 @@ CREATE TABLE Class (
     Year int DEFAULT 1,
 );
 GO
-CREATE SCHEMA Migrated;
-GO

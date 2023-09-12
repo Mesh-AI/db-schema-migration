@@ -9,3 +9,12 @@ services:
     environment:
       SA_PASSWORD: Migrationmaster0
       ACCEPT_EULA: "Y"
+  migrated-db:
+    container_name: migrated-db-postgres
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'

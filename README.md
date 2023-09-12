@@ -2,11 +2,22 @@
 
 This project is intended to aid migrating existing database table schemas to a new database engine.
 
-It uses ingests the SQL Server information schema to produce a change log file for Liquibase to deploy to your target database.
+It ingests the SQL Server information schema to produce a change log file for Liquibase to deploy to your target database.
 
-As Liquibase can deploy to many database engines this tool is currenlty one to many, of SQL Server to all SQL engines Liquibase can work with.
+As Liquibase can deploy to many database engines this tool is currenlty one to many, of SQL Server to all SQL engines Liquibase can work with. An example has been included to migrate and deploy to a containerised postgres instance.
 
-If you have the information schema exported already with the filename `schema.csv`, run:
+## Requirements
+
+Python 3
+Liquibase
+cmdsql CLI
+psql CLI
+
+## Acquiring the information schema
+
+The conversion tool requires the output of `export_information_schema.sql`, I would suggest you follow the example below with the containerised SQL Server instance, if you wish to run it directly against your database, export the response of the query as a csv file and if there is a delimiting line between the header and rows, remove it. If you have the information schema exported with the filename `schema.csv`, run:
+
+## Generating the ChangeLog file
 
 ```bash
 python3 -m venv .venv
@@ -15,7 +26,7 @@ source .venv/bin/activate
 python3 convert.py
 ```
 
-And the Liquibase changelog file will be generated.
+And the Liquibase changelog file will be generated. If you need to generate `schema.csv` continue on.
 
 To test end to end, run the docker container below, create a few tables and then export the information schema. Note you will need sqlcmd CLI installed to your machine.
 
@@ -44,13 +55,28 @@ sqlcmd -S localhost -U SA -P Migrationmaster0 -d TestDB -i export_information_sc
 
 Annoyingly SQL Server exports an additional row to separate the header from actual data, we want removed that second delimiting row using sed.
 
-
 At this point you should have the information schema in a useable format, run the python scrip as above.
 
-To test deploying liquibase, a new schema `Migrated` has been added and running and update will roll out the changes:
+To test deploying liquibase we will connect to the containerised postgres instance:
+
+```bash
+psql postgresql://postgres:postgres@localhost:5432/postgres
+create database "TestDB";
+ \c "TestDB"
+ \dt
+ exit
+```
+
+Deploy Liquibase:
 
 ```bash
 liquibase update
 ```
 
-If you again export the information schema you can see the new tables that were created.
+Back in Postgres you can see the new tables using:
+
+```bash
+psql postgresql://postgres:postgres@localhost:5432/postgres
+ \c "TestDB"
+ \dt
+```
