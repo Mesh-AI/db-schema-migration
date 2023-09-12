@@ -1,18 +1,49 @@
 import pandas as pd
 import yaml
 
-colunn_subset = ["TABLE_NAME", "COLUMN_NAME", "DATA_TYPE", "IS_NULLABLE"]
+colunn_subset = [
+    "TABLE_CATALOG",
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "COLUMN_NAME",
+    "DATA_TYPE",
+    "IS_NULLABLE",
+    "CONSTRAINT_TYPE",
+    "COLUMN_DEFAULT",
+]
 source_schema = (
     pd.read_csv("schema.csv")
     # Remove white space from column names
     .rename(columns=lambda x: x.strip())
     # Remove white space from rows
-    .map(lambda x: x.strip() if isinstance(x, str) else x)[colunn_subset]
+    .map(lambda x: x.strip() if isinstance(x, str) else x)
+    # For all rows
+    .replace({"NULL": False})[colunn_subset]
 )
 # Data cleaning to conform to boolean types
 source_schema.IS_NULLABLE = source_schema.IS_NULLABLE.apply(
     lambda x: True if x == "YES" else False
 )
+
+
+def get_constraints(column_attributes):
+    constraints = {"nullable": column_attributes["IS_NULLABLE"]}
+    if column_attributes["CONSTRAINT_TYPE"] == "UNIQUE":
+        constraints.update({"unique": True})
+    # Experimental,
+    if (
+        column_attributes["COLUMN_DEFAULT"]
+        and column_attributes["DATA_TYPE"] == "varchar"
+    ):
+        constraints.update({"defaultValue": column_attributes["COLUMN_DEFAULT"][2:-2]})
+    if column_attributes["COLUMN_DEFAULT"] and column_attributes["DATA_TYPE"] == "int":
+        constraints.update(
+            {"defaultValue": int(column_attributes["COLUMN_DEFAULT"][2:-2])}
+        )
+    if column_attributes["CONSTRAINT_TYPE"] == "PRIMARY KEY":
+        constraints = {"primaryKey": True}
+    return constraints
+
 
 # Add any additional Attributes or Preconditions as dictionaries in the list below
 change_log = {
@@ -23,7 +54,9 @@ change_log = {
     ]
 }
 
+
 table_names = source_schema.loc[:, "TABLE_NAME"].unique()
+
 for table_name in table_names:
     change_log["databaseChangeLog"].append(
         {
@@ -33,14 +66,13 @@ for table_name in table_names:
                 "changes": {
                     "createTable": {
                         "tableName": table_name,
+                        "schemaName": "Migrated",
                         "columns": [
                             {
                                 "column": {
                                     "name": column_attributes["COLUMN_NAME"],
                                     "type": column_attributes["DATA_TYPE"],
-                                    "constraints": {
-                                        "nullable": column_attributes["IS_NULLABLE"]
-                                    },
+                                    "constraints": get_constraints(column_attributes),
                                 }
                             }
                             for column_attributes in source_schema[

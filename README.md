@@ -32,19 +32,25 @@ docker compose up -d
 If you have installed sqlcmd, run the setup script to create the rest database and tables:
 
 ```bash
-sqlcmd -S localhost -U SA -P Migrationmaster0 -d TestDB -i setup.sql
+sqlcmd -S localhost -U SA -P Migrationmaster0 -i setup.sql
 ```
 
 Export the `INFORMATION_SCHEMA` to `schema.csv` with:
 
 ```bash
-sqlcmd -S localhost -U SA -P Migrationmaster0 -d TestDB -Q "SET NOCOUNT ON; SELECT * FROM INFORMATION_SCHEMA.COLUMNS" -o "schema.csv" -s","
+sqlcmd -S localhost -U SA -P Migrationmaster0 -d TestDB -i export_information_schema.sql -o "schema.csv" -s "," \
+&& sed -i '' '2d' schema.csv
 ```
 
-Annoyingly SQL Server exports an additional row to separate the header from actual data, we want to remove that second delimiting row with:
+Annoyingly SQL Server exports an additional row to separate the header from actual data, we want removed that second delimiting row using sed.
 
-```bash
-sed -i '' '2d' schema.csv
-```
 
 At this point you should have the information schema in a useable format, run the python scrip as above.
+
+To test deploying liquibase, a new schema `Migrated` has been added and running and update will roll out the changes:
+
+```bash
+liquibase update
+```
+
+If you again export the information schema you can see the new tables that were created.
