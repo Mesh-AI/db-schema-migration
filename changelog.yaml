@@ -6,6 +6,7 @@ databaseChangeLog:
     changes:
       createTable:
         catalogName: TestDB
+        schemaName: dbo
         tableName: Inventory
         columns:
         - column:
@@ -29,6 +30,7 @@ databaseChangeLog:
     changes:
       createTable:
         catalogName: TestDB
+        schemaName: dbo
         tableName: Books
         columns:
         - column:
@@ -52,6 +54,7 @@ databaseChangeLog:
     changes:
       createTable:
         catalogName: TestDB
+        schemaName: dbo
         tableName: Persons
         columns:
         - column:
@@ -86,6 +89,7 @@ databaseChangeLog:
     changes:
       createTable:
         catalogName: TestDB
+        schemaName: dbo
         tableName: Class
         columns:
         - column:

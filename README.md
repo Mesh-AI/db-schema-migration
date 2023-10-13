@@ -21,9 +21,8 @@ The conversion tool requires the output of `export_information_schema.sql`, I wo
 
 ```bash
 python3 -m venv .venv
-pip3 install --requirement requirements.txt
 source .venv/bin/activate 
-python3 convert.py
+pip3 install --requirement requirements.txt
 ```
 
 And the Liquibase changelog file will be generated. If you need to generate `schema.csv` continue on.
@@ -34,12 +33,15 @@ To test end to end, run the docker container below, create a few tables and then
 [Here're the MS docs on containerized SQL Server if you get stuck](
 https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver16&pivots=cs1-bash)
 
-Download, start and exec in to the container:
+Download and initiate the containers in the background with:
 
 ```bash
 docker compose up -d
 ```
 
+
+Note: If you are using ARM64, you'll likely need Rosetta for x86/amd64 emulation. You should find this in your Docker Desktop / Rancher Desktop Options. You'll hit this error if your sql server container starts but is never in a running state.
+ 
 If you have installed sqlcmd, run the setup script to create the rest database and tables:
 
 ```bash
@@ -55,16 +57,23 @@ sqlcmd -S localhost -U SA -P Migrationmaster0 -d TestDB -i export_information_sc
 
 Annoyingly SQL Server exports an additional row to separate the header from actual data, we want removed that second delimiting row using sed.
 
-At this point you should have the information schema in a useable format, run the python scrip as above.
+At this point you should have the information schema in a useable format, run the python.
+
+Convert the schema to Liquibase yaml:
+```bash
+python3 convert.py
+```
 
 To test deploying liquibase we will connect to the containerised postgres instance:
 
 ```bash
 psql postgresql://postgres:postgres@localhost:5432/postgres
 create database "TestDB";
- \c "TestDB"
- \dt
- exit
+\c "TestDB"
+create schema dbo;
+SET search_path TO dbo;
+\dt
+exit
 ```
 
 Deploy Liquibase:
@@ -78,5 +87,7 @@ Back in Postgres you can see the new tables using:
 ```bash
 psql postgresql://postgres:postgres@localhost:5432/postgres
  \c "TestDB"
+ SET search_path TO dbo;
  \dt
+ exit
 ```
